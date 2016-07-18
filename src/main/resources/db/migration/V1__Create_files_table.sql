@@ -1,0 +1,1 @@
+CREATE TABLE files ("id" bigserial NOT NULL, "name" varchar NOT NULL UNIQUE, "url" varchar, "media" varchar, "available" boolean, PRIMARY KEY ("id"));
