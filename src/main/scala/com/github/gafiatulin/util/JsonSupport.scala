@@ -32,7 +32,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol{
       Seq(
         obj.id.map("id" -> JsNumber(_)),
         obj.url.map(x => "url" -> JsString(x.toString)),
-        obj.media.map(x => "media" -> JsString(x.mainType))
+        obj.media.map(x => "media" -> JsString(x.toString))
       ).flatten
     }
   }
