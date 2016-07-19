@@ -57,11 +57,14 @@ class FileUploader(hash: String, dir: Path) extends ActorSubscriber with Persist
       }
     case OnNext(bs: ByteString) =>
       log.debug("{}", bs.length)
-      val written = byteChanel.flatMap(x => Try(x.write(bs.toByteBuffer)).toOption).getOrElse(0)
-      log.debug("Written {} to {}. ByteChannel position: {}", written, fileName, byteChanel.map(_.position))
-      persist[ChunkWritten](ChunkWritten(written.toLong)){ evt =>
-        seqNumber += 1
-        size += evt.size
+      byteChanel.flatMap(x => Try(x.write(bs.toByteBuffer)).toOption) match {
+        case Some(chunkSize) =>
+          log.debug("Written {} to {}. ByteChannel position: {}", chunkSize, fileName, byteChanel.map(_.position))
+          persist[ChunkWritten](ChunkWritten(chunkSize.toLong)){ evt =>
+            seqNumber += 1
+            size += evt.size
+          }
+        case None => ()
       }
     case OnNext(x) =>
       log.debug("Received {}", x)
