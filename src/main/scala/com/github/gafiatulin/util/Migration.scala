@@ -20,6 +20,7 @@ trait Migration extends Config{
   val driver: JdbcProfile
   val log: LoggingAdapter
 
+  //Dirty hack
   private def createIfNotExists()(implicit ec: ExecutionContext) = {
     val dbURL = databaseUrl.take(databaseUrl.indexOfSlice(databaseName)) + dbSpecificDefaultDB
     import driver.api._
@@ -41,6 +42,7 @@ trait Migration extends Config{
       case _ => None
     }
   }
+  //
 
   private val migration = () => {
     flyway.setBaselineOnMigrate(true)

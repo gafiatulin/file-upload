@@ -12,7 +12,8 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 trait RoutingUtils extends JsonSupport {
   implicit val ec: ExecutionContextExecutor
   val recoverAfterException: PartialFunction[Throwable, Future[HttpResponse]] = {
-    case e: ErrorResponse => Marshal(e.statusCode -> e.getMessage).to[HttpResponse]
+    case e: ErrorResponse =>
+      Marshal(e.statusCode -> e.message).to[HttpResponse]
     case t: Throwable => Marshal(StatusCodes.InternalServerError -> t.getMessage).to[HttpResponse]
   }
 }

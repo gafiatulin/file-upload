@@ -1,19 +1,24 @@
 package com.github.gafiatulin.model
 
-import akka.http.scaladsl.model.{MediaRange, MediaRanges, Uri}
+import akka.http.scaladsl.model.{MediaType, MediaTypes, Uri}
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 
 /**
   * Created by victor on 18/07/16.
   */
-case class FileMeta(id: Option[Long], name: String, url: Option[Uri], media: Option[MediaRange], available: Boolean = false)
+case class FileMeta(id: Option[Long], name: String, url: Option[Uri], media: Option[MediaType], available: Boolean = false)
 
 object FileMeta{
   def toRow(obj: FileMeta): Option[(Option[Long], String, Option[String], Option[String], Boolean)] =
-    Some((obj.id, obj.name, obj.url.map(_.toString), obj.media.map(_.mainType), obj.available))
-  def fromRow(fId: Option[Long], fName: String, fUrl: Option[String], fMedia: Option[String],  fAvailability: Boolean): FileMeta =
-    FileMeta(fId, fName, fUrl.map(Uri(_)), fMedia.flatMap(MediaRanges.getForKey), fAvailability)
+    Some((obj.id, obj.name, obj.url.map(_.toString), obj.media.map(_.toString), obj.available))
+  def fromRow(fId: Option[Long], fName: String, fUrl: Option[String], fMedia: Option[String],  fAvailability: Boolean): FileMeta = {
+    val media = fMedia.flatMap{ x =>
+      val t = x.splitAt(x.indexOf('/'))
+      MediaTypes.getForKey(t._1 -> t._2.tail)
+    }
+    FileMeta(fId, fName, fUrl.map(Uri(_)), media, fAvailability)
+  }
 }
 
 trait FilesTable{
@@ -28,5 +33,5 @@ trait FilesTable{
     def * : ProvenShape[FileMeta] = (id.?, name, url.?, media.?, available) <> ((FileMeta.fromRow _).tupled, FileMeta.toRow)
   }
 
-  private [model] val files = TableQuery[Files]
+  private[model] val files = TableQuery[Files]
 }

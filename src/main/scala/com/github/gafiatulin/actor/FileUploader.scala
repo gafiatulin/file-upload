@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.{DeleteMessagesSuccess, PersistentActor, RecoveryCompleted}
-import akka.stream.actor.{ActorSubscriber, MaxInFlightRequestStrategy}
+import akka.stream.actor.{ActorSubscriber, WatermarkRequestStrategy}
 import akka.util.ByteString
 
 import scala.concurrent.Promise
@@ -16,31 +16,27 @@ import scala.util.Try
   * Created by victor on 18/07/16.
   */
 
-class FileUploader(hash: String, dir: Path) extends PersistentActor with ActorSubscriber with ActorLogging{
+class FileUploader(hash: String, dir: Path) extends ActorSubscriber with PersistentActor with ActorLogging{
   import akka.stream.actor.ActorSubscriberMessage._
-  private var inFlight = 0
   private var fileName = ""
+  private var mediaType = ""
   private var fileId = 0L
   private var size = 0L
   private var seqNumber = 0L
   private var byteChanel: Option[SeekableByteChannel] = None
   private val promise = Promise[Long]()
 
-  override def persistenceId = hash
+  override def persistenceId: String = hash
 
-  override protected def requestStrategy = new MaxInFlightRequestStrategy(10) {
-    override def inFlightInternally = inFlight
-  }
+  override val requestStrategy = new WatermarkRequestStrategy(highWatermark = FileUploader.highWatermark)
 
   def initByteChannel(fileName: String, offset: Long): Unit = {
     log.debug("Initializing ByteChannel")
     byteChanel = Try(Files.newByteChannel(dir.resolve(fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE)).toOption
-    log.debug("Setting ByteChannel offset = {}", offset)
     byteChanel.foreach(_.position(offset))
-
   }
 
-  override def receiveCommand = {
+  override def receiveCommand: Receive = {
     case Terminate =>
       log.debug("Terminating. State: seqNumber = {}, size = {} ", seqNumber, size)
       sender ! Done
@@ -49,25 +45,26 @@ class FileUploader(hash: String, dir: Path) extends PersistentActor with ActorSu
       log.debug("Deleting all messages (up to {})", seqNumber)
       deleteMessages(seqNumber)
       sender ! Done
-    case SetNameAndId(name, id) =>
-      inFlight += 1
-      persist[NameAndIdChanged](NameAndIdChanged(name, id)){ evt =>
+    case SetNameIdAndMediaType(name, id, mType) =>
+      persist[NameIdAndMediaTypeChanged](NameIdAndMediaTypeChanged(name, id, mType)){ evt =>
         fileName = evt.name
+        mediaType = mType
         fileId = id
-        log.debug("Setting name to {} and id to {}", fileName, fileId)
+        log.debug("Setting name to {}, id to {} and media to {}", fileName, fileId, mediaType)
         initByteChannel(fileName, size)
         seqNumber += 1
-        inFlight -= 1
         sender ! Done
       }
     case OnNext(bs: ByteString) =>
-      inFlight += 1
+      log.debug("{}", bs.length)
       val written = byteChanel.flatMap(x => Try(x.write(bs.toByteBuffer)).toOption).getOrElse(0)
-      log.debug("Written {} to {}", written, fileName)
+      log.debug("Written {} to {}. ByteChannel position: {}", written, fileName, byteChanel.map(_.position))
       persist[ChunkWritten](ChunkWritten(written.toLong)){ evt =>
         seqNumber += 1
         size += evt.size
       }
+    case OnNext(x) =>
+      log.debug("Received {}", x)
     case OnError(t) =>
       log.debug("Received upstream error {}", t)
       promise.failure(t)
@@ -75,6 +72,7 @@ class FileUploader(hash: String, dir: Path) extends PersistentActor with ActorSu
     case OnComplete =>
       log.debug("Stream completed. Completing the promise with success")
       promise.success(fileId)
+      self ! CleanUp
       ()
     case GetCompletion =>
       log.debug("Returning promise")
@@ -88,9 +86,10 @@ class FileUploader(hash: String, dir: Path) extends PersistentActor with ActorSu
     case RecoveryCompleted =>
       log.debug("RecoveryCompleted")
       initByteChannel(fileName, size)
-    case NameAndIdChanged(name, id) =>
+    case NameIdAndMediaTypeChanged(name, id, mType) =>
       seqNumber += 1
       fileName = name
+      mediaType = mType
       fileId = id
     case ChunkWritten(chunkSize) =>
       seqNumber += 1
@@ -99,5 +98,6 @@ class FileUploader(hash: String, dir: Path) extends PersistentActor with ActorSu
 }
 
 object FileUploader{
+  val highWatermark = 50
   def props(hash: String, directory: Path): Props = Props(classOf[FileUploader], hash, directory)
 }

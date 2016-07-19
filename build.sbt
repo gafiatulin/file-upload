@@ -39,11 +39,7 @@ libraryDependencies ++= {
     "org.postgresql"              %    "postgresql"                            % "9.4.1208",
     "org.flywaydb"                %    "flyway-core"                           % "4.0.3",
     "org.iq80.leveldb"            %    "leveldb"                               % "0.7",
-    "ch.qos.logback"              %    "logback-classic"                       % "1.1.7",
-    "net.logstash.logback"        %    "logstash-logback-encoder"              % "4.7",
-    "org.codehaus.janino"         %    "janino"                                % "3.0.0",
-    "org.scalatest"               %%   "scalatest"                             % "3.0.0-RC4"      % "test",
-    akkaGroupId                   %%   "akka-http-testkit"                     % akkaV            % "test"
+    "ch.qos.logback"              %    "logback-classic"                       % "1.1.7"
   )
 }
 

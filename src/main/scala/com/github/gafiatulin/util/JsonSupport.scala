@@ -1,7 +1,7 @@
 package com.github.gafiatulin.util
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{MediaRanges, Uri}
+import akka.http.scaladsl.model.{MediaTypes, Uri}
 import com.github.gafiatulin.model.FileMeta
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
@@ -16,9 +16,13 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol{
       val fields = json.asJsObject.fields
       (for{
         id <- Try(fields.get("id").map(_.convertTo[Long]))
-        name <- Try(fields("fileName").convertTo[String])
+        media <- Try(fields.get("media").map{x =>
+          val str = x.convertTo[String]
+          val t = str.splitAt(str.indexOf('/'))
+          t._1 -> t._2.tail
+        }.flatMap(x => MediaTypes.getForKey(x)))
+        name <- Try(fields("fileName").convertTo[String].ensuring{fn => media.forall(_.fileExtensions.exists(x => fn.endsWith(x)))})
         url <- Try(fields.get("url").map(x => Uri(x.convertTo[String])))
-        media <- Try(fields.get("media").flatMap(x => MediaRanges.getForKey(x.convertTo[String])))
       } yield FileMeta(id, name, url, media))
         .getOrElse(throw DeserializationException("FileMeta expected"))
     }

@@ -1,9 +1,13 @@
 package com.github.gafiatulin.model
 
+import java.sql.SQLException
+
+import akka.http.scaladsl.model.StatusCodes
 import com.github.gafiatulin.util.{Config, ErrorResponse}
 import slick.jdbc.JdbcBackend._
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 
 /**
   * Created by victor on 18/07/16.
@@ -14,7 +18,12 @@ trait FileMetaUtils extends FilesTable with Config {
 
   import driver.api._
 
-  def persistFileMeta(meta: FileMeta): Future[Long] = db.run(((files returning files.map(_.id)) += meta).transactionally)
+  def persistFileMeta(meta: FileMeta): Future[Long] = db.run(((files returning files.map(_.id)) += meta).transactionally.asTry).map{
+    case Success(id) => id
+    case Failure(t: SQLException) if t.getSQLState == "23505" =>
+      throw ErrorResponse("File with specified name already exists or it's upload have been requested", StatusCodes.BadRequest)
+    case Failure(t) => throw ErrorResponse(t.getMessage)
+  }
 
   def queryFileMeta(params: Seq[(String, String)]): Future[Seq[FileMeta]] = {
     val query = files.filter{x =>
@@ -38,6 +47,9 @@ trait FileMetaUtils extends FilesTable with Config {
         fsAdapter.deleteFileBy(name, id, available).flatMap(_ => del())
     }
   }
+
+  def allUnavailable: Future[Seq[FileMeta]] = db.run(files.filter(_.available === false).result)
+
   def completeFileUpload(id: Long): Future[Unit] = db.run(files.filter(_.id === id).map(_.available).update(true).transactionally).map{
     case 1 => ()
     case _ => throw ErrorResponse("Made available more than one file. This shouldn't happen")

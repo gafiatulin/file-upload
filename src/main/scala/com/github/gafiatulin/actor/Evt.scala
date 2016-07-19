@@ -5,5 +5,5 @@ package com.github.gafiatulin.actor
   */
 
 sealed trait Evt
-case class NameAndIdChanged(name: String, id: Long) extends Evt
+case class NameIdAndMediaTypeChanged(name: String, id: Long, mType: String) extends Evt
 case class ChunkWritten(size: Long) extends Evt

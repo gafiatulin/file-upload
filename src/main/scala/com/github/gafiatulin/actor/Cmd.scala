@@ -5,7 +5,8 @@ package com.github.gafiatulin.actor
   */
 
 sealed trait Cmd
-case class SetNameAndId(name: String, id: Long) extends Cmd
+case class SetNameIdAndMediaType(name: String, id: Long, mType: String) extends Cmd
 case object Terminate extends Cmd
 case object GetCompletion extends Cmd
 case object CleanUp extends Cmd
+
