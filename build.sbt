@@ -1,4 +1,4 @@
-name := "file-upload"
+name := "resumable-file-upload"
 
 version := "1.0"
 
