@@ -29,8 +29,8 @@ trait FileMetaUtils extends FilesTable with Config {
     val query = files.filter{x =>
       params.flatMap{
         case ("id", v) => Some(x.id === v.toLong)
-        case ("name", v) => Some(x.name === v)
-        case ("media", v) => Some(x.media === v)
+        case ("name", v) => Some(x.name.startsWith(v))
+        case ("media", v) => Some(x.media.startsWith(v))
       }.+:(x.available === true).reduceLeft(_ && _)
     }
     db.run(query.result)
