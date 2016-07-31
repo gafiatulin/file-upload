@@ -21,7 +21,7 @@ object Main extends App with Service with Migration {
   val log: LoggingAdapter = system.log
   implicit val ec = ExecutionContext.fromExecutor(Executors.newCachedThreadPool)
 
-  val driver = slick.jdbc.PostgresProfile
+  val driver = slick.driver.PostgresDriver
   lazy val db = Database.forConfig("database")
 
   private def reportAndTerminate(msg: String, cause: Option[Throwable] = None) = {

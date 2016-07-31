@@ -23,10 +23,12 @@ scalacOptions ++= Seq(
   "-Ywarn-unused-import"
 )
 
+resolvers += Resolver.jcenterRepo
+
 libraryDependencies ++= {
   val akkaV = "2.4.8"
   val akkaGroupId = "com.typesafe.akka"
-  val slickV = "3.2.0-M1"
+  val slickV = "3.1.1"
   Seq(
     akkaGroupId                   %%   "akka-http-core"                        % akkaV,
     akkaGroupId                   %%   "akka-http-experimental"                % akkaV,
@@ -36,9 +38,9 @@ libraryDependencies ++= {
     akkaGroupId                   %%   "akka-persistence-query-experimental"   % akkaV,
     "com.typesafe.slick"          %%   "slick"                                 % slickV,
     "com.typesafe.slick"          %%   "slick-hikaricp"                        % slickV,
-    "org.postgresql"              %    "postgresql"                            % "9.4.1208",
+    "com.github.dnvriend"         %%   "akka-persistence-jdbc"                 % "2.6.4",
+    "org.postgresql"              %    "postgresql"                            % "9.4.1209",
     "org.flywaydb"                %    "flyway-core"                           % "4.0.3",
-    "org.iq80.leveldb"            %    "leveldb"                               % "0.7",
     "ch.qos.logback"              %    "logback-classic"                       % "1.1.7"
   )
 }

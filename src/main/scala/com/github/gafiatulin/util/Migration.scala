@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.event.LoggingAdapter
 import org.flywaydb.core.Flyway
-import slick.jdbc.JdbcProfile
+import slick.driver.JdbcProfile
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}

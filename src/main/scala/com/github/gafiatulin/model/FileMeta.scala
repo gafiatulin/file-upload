@@ -1,7 +1,7 @@
 package com.github.gafiatulin.model
 
 import akka.http.scaladsl.model.{MediaType, MediaTypes, Uri}
-import slick.jdbc.JdbcProfile
+import slick.driver.JdbcProfile
 import slick.lifted.ProvenShape
 
 /**
