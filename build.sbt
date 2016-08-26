@@ -26,7 +26,7 @@ scalacOptions ++= Seq(
 resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++= {
-  val akkaV = "2.4.8"
+  val akkaV = "2.4.9"
   val akkaGroupId = "com.typesafe.akka"
   val slickV = "3.1.1"
   Seq(
