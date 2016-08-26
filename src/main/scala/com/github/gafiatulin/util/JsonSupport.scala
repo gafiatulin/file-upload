@@ -23,11 +23,13 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol{
         }.flatMap(x => MediaTypes.getForKey(x)))
         name <- Try(fields("fileName").convertTo[String].ensuring{fn => media.forall(_.fileExtensions.exists(x => fn.endsWith(x)))})
         url <- Try(fields.get("url").map(x => Uri(x.convertTo[String])))
-      } yield FileMeta(id, name, url, media))
+        extra <- Try(JsObject(fields -- Seq("id", "media", "fileName", "url")))
+      } yield FileMeta(id, name, url, media, extra))
         .getOrElse(throw DeserializationException("FileMeta expected"))
     }
 
     override def write(obj: FileMeta): JsValue = JsObject{
+      obj.extra.asJsObject.fields ++
       Map("fileName" -> JsString(obj.name)) ++
       Seq(
         obj.id.map("id" -> JsNumber(_)),
