@@ -11,7 +11,7 @@ import scala.util.Random
 trait FileStorageAdapter {
   def getFileUploadUrl(id: Long, name: String, media: Option[MediaType]): Future[Uri]
   def deleteFileBy(fileName: String, id: Long, completed: Boolean): Future[Unit]
-  protected def hash(id: Long, length: Int): String = {
+  def hash(id: Long, length: Int): String = {
     new Random(id).alphanumeric.take(length).mkString
   }
 }
