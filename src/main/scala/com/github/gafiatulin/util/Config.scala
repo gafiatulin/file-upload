@@ -52,4 +52,7 @@ trait Config {
 
   val staticFilesUrlPrefix = config.getString("staticFilesUrlPrefix")
   val staticFilesDirectory = Paths.get(fsConfig.getString("filesLocation")).toAbsolutePath.normalize
+
+  val uploadHashLength: Option[Int] = Try(fsConfig.getInt("hashLength")).toOption
+  val uploadPrefix: String = fsConfig.getString("uploadUrlPrefix")
 }
